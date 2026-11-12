@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ResearchBridge — Collaboration Potential Analyzer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  :root {
+    --ink:        #0E0E0E;
+    --ink-soft:   #4A4A4A;
+    --ink-muted:  #8A8A8A;
+    --canvas:     #F7F5F0;
+    --paper:      #FFFFFF;
+    --rule:       #E2DED8;
+    --accent:     #1A4D8F;
+    --accent-lt:  #EBF0FA;
+    --accent-mid: #3B74C7;
+    --green:      #0D6B4E;
+    --green-lt:   #E6F4EE;
+    --green-bd:   #8ECFB8;
+    --coral:      #B8410F;
+    --coral-lt:   #FAEDE7;
+    --coral-bd:   #F0A580;
+    --amber:      #7A4D00;
+    --amber-lt:   #FBF0DA;
+    --amber-bd:   #E8B85A;
+    --purple:     #3D2E8A;
+    --purple-lt:  #EEECFB;
+    --purple-bd:  #B3ABE8;
+    --r:          6px;
+    --r-lg:       12px;
+    --shadow:     0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Georgia','Times New Roman',serif; background: var(--canvas); color: var(--ink); min-height: 100vh; line-height: 1.6; }
+  ::selection { background: var(--accent-lt); }
+  nav { position: sticky; top: 0; z-index: 100; background: rgba(247,245,240,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--rule); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 56px; }
+  .nav-logo { font-family: 'Georgia',serif; font-size: 17px; font-weight: normal; letter-spacing: -0.02em; color: var(--ink); }
+  .nav-logo span { color: var(--accent-mid); }
+  .nav-tag { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-muted); background: var(--rule); padding: 3px 10px; border-radius: 99px; }
+  .hero { max-width: 720px; margin: 0 auto; padding: 5rem 2rem 3rem; text-align: center; }
+  .hero-eyebrow { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 1.25rem; }
+  .hero h1 { font-size: clamp(32px,5vw,52px); font-weight: normal; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 1.25rem; }
+  .hero h1 em { font-style: italic; color: var(--accent-mid); }
+  .hero-sub { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 15px; color: var(--ink-soft); line-height: 1.7; max-width: 480px; margin: 0 auto; }
+  .steps { display: flex; align-items: center; justify-content: center; gap: 0; margin: 2.5rem auto 0; max-width: 420px; font-family: 'Helvetica Neue',Arial,sans-serif; }
+  .step-item { display: flex; flex-direction: column; align-items: center; flex: 1; }
+  .step-circle { width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--rule); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: var(--ink-muted); background: var(--paper); transition: all 0.3s; }
+  .step-circle.active { border-color: var(--accent-mid); color: var(--accent-mid); background: var(--accent-lt); }
+  .step-circle.done { border-color: var(--green); color: var(--paper); background: var(--green); }
+  .step-label { font-size: 10px; color: var(--ink-muted); margin-top: 6px; text-align: center; letter-spacing: 0.04em; }
+  .step-connector { flex: 1; height: 1px; background: var(--rule); margin-bottom: 16px; }
+  .main { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem 6rem; }
+  .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem; }
+  .upload-card { background: var(--paper); border: 1px solid var(--rule); border-radius: var(--r-lg); padding: 1.5rem; box-shadow: var(--shadow); transition: border-color 0.2s; }
+  .upload-card.has-file { border-color: var(--green); }
+  .card-eyebrow { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; display: flex; align-items: center; gap: 6px; margin-bottom: 0.6rem; }
+  .dot-a { color: var(--accent-mid); }
+  .dot-b { color: var(--green); }
+  .card-eyebrow::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+  .card-title { font-size: 18px; font-weight: normal; margin-bottom: 0.2rem; letter-spacing: -0.02em; }
+  .card-desc { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 12px; color: var(--ink-muted); margin-bottom: 1.25rem; }
+  .drop-zone { border: 1.5px dashed var(--rule); border-radius: var(--r); padding: 1.5rem 1rem; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--canvas); }
+  .drop-zone:hover, .drop-zone.drag-over { border-color: var(--accent-mid); background: var(--accent-lt); }
+  .drop-icon { font-size: 28px; margin-bottom: 8px; display: block; color: var(--ink-muted); }
+  .drop-text { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 12px; color: var(--ink-muted); line-height: 1.5; }
+  .drop-text strong { color: var(--ink-soft); }
+  input[type="file"] { display: none; }
+  .file-pill { display: flex; align-items: center; gap: 8px; margin-top: 0.85rem; background: var(--green-lt); border: 1px solid var(--green-bd); border-radius: var(--r); padding: 0.5rem 0.75rem; font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 12px; color: var(--green); }
+  .file-pill .fname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-pill .remove-btn { cursor: pointer; opacity: 0.7; font-size: 16px; line-height: 1; }
+  .file-pill .remove-btn:hover { opacity: 1; }
+  .processing-pill { display: flex; align-items: center; gap: 8px; margin-top: 0.85rem; background: var(--amber-lt); border: 1px solid var(--amber-bd); border-radius: var(--r); padding: 0.5rem 0.75rem; font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 12px; color: var(--amber); }
+  .spinner-sm { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid rgba(122,77,0,0.3); border-top-color: var(--amber); animation: spin 0.7s linear infinite; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .analyze-wrap { text-align: center; }
+  .analyze-btn { display: inline-flex; align-items: center; gap: 10px; background: var(--ink); color: var(--paper); border: none; border-radius: var(--r); font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 14px; font-weight: 500; letter-spacing: 0.01em; padding: 0.85rem 2.5rem; cursor: pointer; transition: all 0.2s; }
+  .analyze-btn:hover:not(:disabled) { background: var(--accent); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
+  .analyze-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
+  .analyze-btn .spinner-btn { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; animation: spin 0.7s linear infinite; }
+  .api-note { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 11px; color: var(--ink-muted); margin-top: 0.75rem; }
+  .api-note a { color: var(--accent-mid); text-decoration: none; }
+  .api-note a:hover { text-decoration: underline; }
+  .error-box { background: var(--coral-lt); border: 1px solid var(--coral-bd); border-radius: var(--r); padding: 0.85rem 1rem; font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 13px; color: var(--coral); margin-bottom: 1.25rem; display: none; }
+  #results { display: none; }
+  #results.visible { display: block; animation: fadeUp 0.5s ease; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  .results-divider { display: flex; align-items: center; gap: 1rem; margin: 2.5rem 0 2rem; }
+  .results-divider::before, .results-divider::after { content: ''; flex: 1; height: 1px; background: var(--rule); }
+  .results-divider-label { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-muted); white-space: nowrap; }
+  .score-banner { background: var(--paper); border: 1px solid var(--rule); border-radius: var(--r-lg); padding: 2rem; margin-bottom: 1.5rem; box-shadow: var(--shadow); display: grid; grid-template-columns: 100px 1fr; gap: 1.75rem; align-items: center; }
+  .score-dial { width: 100px; height: 100px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; border: 2.5px solid var(--green); background: var(--green-lt); }
+  .score-num-big { font-size: 36px; font-weight: normal; letter-spacing: -0.04em; color: var(--green); line-height: 1; }
+  .score-pct-label { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 10px; color: var(--green); letter-spacing: 0.06em; margin-top: 2px; }
+  .score-right-label { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 0.4rem; }
+  .score-verdict { font-size: 18px; font-weight: normal; letter-spacing: -0.02em; margin-bottom: 0.75rem; }
+  .score-bar-track { height: 4px; background: var(--rule); border-radius: 99px; overflow: hidden; margin-bottom: 0.85rem; }
+  .score-bar-fill { height: 100%; border-radius: 99px; transition: width 1.2s cubic-bezier(0.4,0,0.2,1); }
+  .score-summary { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 13px; color: var(--ink-soft); line-height: 1.7; }
+  .section-eyebrow { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 0.75rem; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+  .one-col { margin-bottom: 1rem; }
+  .result-card { background: var(--paper); border: 1px solid var(--rule); border-radius: var(--r-lg); padding: 1.25rem 1.4rem; box-shadow: var(--shadow); }
+  .rc-head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--rule); }
+  .rc-icon { width: 30px; height: 30px; border-radius: var(--r); display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+  .rci-purple { background: var(--purple-lt); color: var(--purple); }
+  .rci-green  { background: var(--green-lt);  color: var(--green);  }
+  .rci-coral  { background: var(--coral-lt);  color: var(--coral);  }
+  .rci-blue   { background: var(--accent-lt); color: var(--accent); }
+  .rci-amber  { background: var(--amber-lt);  color: var(--amber);  }
+  .rc-head-text .rc-title { font-size: 14px; font-weight: normal; font-style: italic; margin-bottom: 1px; }
+  .rc-head-text .rc-sub { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 11px; color: var(--ink-muted); }
+  .tag-list { display: flex; flex-wrap: wrap; gap: 5px; }
+  .tag { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 11px; padding: 3px 10px; border-radius: 99px; border: 1px solid; line-height: 1.5; }
+  .tag-purple { background: var(--purple-lt); color: var(--purple); border-color: var(--purple-bd); }
+  .tag-green  { background: var(--green-lt);  color: var(--green);  border-color: var(--green-bd);  }
+  .tag-coral  { background: var(--coral-lt);  color: var(--coral);  border-color: var(--coral-bd);  }
+  .tag-blue   { background: var(--accent-lt); color: var(--accent); border-color: #A8BEE8;           }
+  .tag-amber  { background: var(--amber-lt);  color: var(--amber);  border-color: var(--amber-bd);   }
+  .contrib-list { display: flex; flex-direction: column; gap: 0.75rem; }
+  .contrib-item { background: var(--canvas); border: 1px solid var(--rule); border-radius: var(--r); padding: 0.85rem 1rem; border-left: 3px solid var(--green); }
+  .contrib-item-label { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green); margin-bottom: 4px; }
+  .contrib-item-text { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 13px; color: var(--ink-soft); line-height: 1.6; }
+  .pathway-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  .pathway-item { background: var(--canvas); border: 1px solid var(--rule); border-radius: var(--r); padding: 0.85rem 1rem; }
+  .pathway-label { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 4px; }
+  .pathway-text { font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 12px; color: var(--ink-soft); line-height: 1.6; }
+  footer { border-top: 1px solid var(--rule); padding: 1.5rem 2rem; text-align: center; font-family: 'Helvetica Neue',Arial,sans-serif; font-size: 11px; color: var(--ink-muted); }
+  @media (max-width: 640px) {
+    .upload-grid, .two-col, .pathway-grid { grid-template-columns: 1fr; }
+    .score-banner { grid-template-columns: 1fr; text-align: center; }
+    .score-dial { margin: 0 auto; }
+    nav { padding: 0 1rem; }
+    .main { padding: 1.5rem 1rem 4rem; }
+    .hero { padding: 3rem 1rem 2rem; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">Research<span>Bridge</span></div>
+  <span class="nav-tag">Collaboration Analyzer</span>
+</nav>
+
+<div class="hero">
+  <p class="hero-eyebrow">For researchers, by research</p>
+  <h1>Find where your work<br>can <em>bridge</em> theirs</h1>
+  <p class="hero-sub">Upload your paper and a target paper. We'll analyze limitations, methodologies, and future directions — then map exactly how your skills can contribute.</p>
+  <div class="steps">
+    <div class="step-item">
+      <div class="step-circle active" id="step1">1</div>
+      <div class="step-label">Upload papers</div>
+    </div>
+    <div class="step-connector"></div>
+    <div class="step-item">
+      <div class="step-circle" id="step2">2</div>
+      <div class="step-label">AI analyzes</div>
+    </div>
+    <div class="step-connector"></div>
+    <div class="step-item">
+      <div class="step-circle" id="step3">3</div>
+      <div class="step-label">See results</div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="upload-grid">
+    <div class="upload-card" id="card-a">
+      <div class="card-eyebrow dot-a">Paper A — Your paper</div>
+      <div class="card-title">Your research</div>
+      <div class="card-desc">Your paper — your skills and methods will be extracted from this</div>
+      <div class="drop-zone" id="zone-a"
+           onclick="document.getElementById('file-a').click()"
+           ondragover="handleDragOver(event,'a')"
+           ondragleave="handleDragLeave(event,'a')"
+           ondrop="handleDrop(event,'a')">
+        <span class="drop-icon">📄</span>
+        <div class="drop-text"><strong>Click to upload</strong> or drag & drop<br>PDF files only</div>
+        <input type="file" id="file-a" accept=".pdf" onchange="handleFileSelect('a',this)">
+      </div>
+      <div class="file-pill" id="pill-a" style="display:none">
+        <span>✓</span><span class="fname" id="fname-a"></span>
+        <span class="remove-btn" onclick="removeFile('a')">×</span>
+      </div>
+      <div class="processing-pill" id="processing-a" style="display:none">
+        <div class="spinner-sm"></div><span>Reading PDF…</span>
+      </div>
+    </div>
+    <div class="upload-card" id="card-b">
+      <div class="card-eyebrow dot-b">Paper B — Target paper</div>
+      <div class="card-title">Target research</div>
+      <div class="card-desc">The paper you want to collaborate with — its gaps become your opportunities</div>
+      <div class="drop-zone" id="zone-b"
+           onclick="document.getElementById('file-b').click()"
+           ondragover="handleDragOver(event,'b')"
+           ondragleave="handleDragLeave(event,'b')"
+           ondrop="handleDrop(event,'b')">
+        <span class="drop-icon">📄</span>
+        <div class="drop-text"><strong>Click to upload</strong> or drag & drop<br>PDF files only</div>
+        <input type="file" id="file-b" accept=".pdf" onchange="handleFileSelect('b',this)">
+      </div>
+      <div class="file-pill" id="pill-b" style="display:none">
+        <span>✓</span><span class="fname" id="fname-b"></span>
+        <span class="remove-btn" onclick="removeFile('b')">×</span>
+      </div>
+      <div class="processing-pill" id="processing-b" style="display:none">
+        <div class="spinner-sm"></div><span>Reading PDF…</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="error-box" id="error-box"></div>
+
+  <div class="analyze-wrap">
+    <button class="analyze-btn" id="analyze-btn" disabled onclick="runAnalysis()">
+      <span id="btn-text">Analyze collaboration potential</span>
+      <span style="font-size:16px">→</span>
+    </button>
+    <p class="api-note">Upload both PDFs above to begin. Analysis is powered by Claude AI.</p>
+  </div>
+
+  <div id="results">
+    <div class="results-divider"><div class="results-divider-label">Analysis results</div></div>
+    <div class="score-banner">
+      <div class="score-dial" id="score-dial">
+        <div class="score-num-big" id="score-num">—</div>
+        <div class="score-pct-label">/ 100</div>
+      </div>
+      <div>
+        <div class="score-right-label">Collaboration compatibility</div>
+        <div class="score-verdict" id="score-verdict">—</div>
+        <div class="score-bar-track"><div class="score-bar-fill" id="score-bar" style="width:0%"></div></div>
+        <div class="score-summary" id="score-summary"></div>
+      </div>
+    </div>
+
+    <div class="section-eyebrow">Limitations</div>
+    <div class="two-col">
+      <div class="result-card">
+        <div class="rc-head"><div class="rc-icon rci-purple">⚠</div><div class="rc-head-text"><div class="rc-title">Limitations</div><div class="rc-sub">Paper A — Your paper</div></div></div>
+        <div class="tag-list" id="lim-a"></div>
+      </div>
+      <div class="result-card">
+        <div class="rc-head"><div class="rc-icon rci-green">⚠</div><div class="rc-head-text"><div class="rc-title">Limitations</div><div class="rc-sub">Paper B — Target paper</div></div></div>
+        <div class="tag-list" id="lim-b"></div>
+      </div>
+    </div>
+
+    <div class="section-eyebrow" style="margin-top:1.5rem">Methodologies</div>
+    <div class="two-col">
+      <div class="result-card">
+        <div class="rc-head"><div class="rc-icon rci-blue">⚗</div><div class="rc-head-text"><div class="rc-title">Methods used</div><div class="rc-sub">Paper A — Your skills</div></div></div>
+        <div class="tag-list" id="meth-a"></div>
+      </div>
+      <div class="result-card">
+        <div class="rc-head"><div class="rc-icon rci-green">⚗</div><div class="rc-head-text"><div class="rc-title">Methods used</div><div class="rc-sub">Paper B — Their approach</div></div></div>
+        <div class="tag-list" id="meth-b"></div>
+      </div>
+    </div>
+
+    <div class="section-eyebrow" style="margin-top:1.5rem">Future directions</div>
+    <div class="two-col">
+      <div class="result-card">
+        <div class="rc-head"><div class="rc-icon rci-coral">◎</div><div class="rc-head-text"><div class="rc-title">Future directions</div><div class="rc-sub">Paper A — Where you're heading</div></div></div>
+        <div class="tag-list" id="fut-a"></div>
+      </div>
+      <div class="result-card">
+        <div class="rc-head"><div class="rc-icon rci-amber">◎</div><div class="rc-head-text"><div class="rc-title">Future directions</div><div class="rc-sub">Paper B — Their open questions</div></div></div>
+        <div class="tag-list" id="fut-b"></div>
+      </div>
+    </div>
+
+    <div class="section-eyebrow" style="margin-top:1.5rem">How you can contribute</div>
+    <div class="one-col">
+      <div class="result-card">
+        <div class="rc-head"><div class="rc-icon rci-green">⟶</div><div class="rc-head-text"><div class="rc-title">Your specific contributions to Paper B</div><div class="rc-sub">Based on your methodologies from Paper A, mapped to Paper B's limitations and future directions</div></div></div>
+        <div class="contrib-list" id="contributions"></div>
+      </div>
+    </div>
+
+    <div class="section-eyebrow" style="margin-top:1.5rem">Collaboration pathways</div>
+    <div class="one-col">
+      <div class="result-card">
+        <div class="rc-head"><div class="rc-icon rci-blue">⇄</div><div class="rc-head-text"><div class="rc-title">How these two papers can work together</div><div class="rc-sub">Concrete joint research directions and mutual benefits</div></div></div>
+        <div class="pathway-grid" id="pathways"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>ResearchBridge — PDF extraction runs in your browser via PDF.js · Analysis by Claude (Anthropic API)</footer>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+const papers = { a: null, b: null };
+
+async function extractPdfText(file) {
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  let text = '';
+  const maxPages = Math.min(pdf.numPages, 25);
+  for (let i = 1; i <= maxPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    text += content.items.map(s => s.str).join(' ') + '\n';
+  }
+  return text.slice(0, 14000);
+}
+
+async function handleFileSelect(which, input) {
+  const file = input.files[0];
+  if (!file) return;
+  await processFile(which, file);
+}
+
+async function processFile(which, file) {
+  if (!file.name.toLowerCase().endsWith('.pdf')) { showError('Please upload a PDF file.'); return; }
+  document.getElementById(`processing-${which}`).style.display = 'flex';
+  document.getElementById(`pill-${which}`).style.display = 'none';
+  document.getElementById(`zone-${which}`).style.display = 'none';
+  document.getElementById(`card-${which}`).classList.remove('has-file');
+  papers[which] = null;
+  updateBtn();
+  try {
+    const text = await extractPdfText(file);
+    papers[which] = { file, text, name: file.name };
+    document.getElementById(`fname-${which}`).textContent = file.name;
+    document.getElementById(`pill-${which}`).style.display = 'flex';
+    document.getElementById(`card-${which}`).classList.add('has-file');
+  } catch(e) {
+    showError('Could not read PDF: ' + e.message);
+    document.getElementById(`zone-${which}`).style.display = 'block';
+  } finally {
+    document.getElementById(`processing-${which}`).style.display = 'none';
+    updateBtn();
+  }
+}
+
+function removeFile(which) {
+  papers[which] = null;
+  document.getElementById(`pill-${which}`).style.display = 'none';
+  document.getElementById(`zone-${which}`).style.display = 'block';
+  document.getElementById(`card-${which}`).classList.remove('has-file');
+  document.getElementById(`file-${which}`).value = '';
+  updateBtn();
+}
+
+function handleDragOver(e, which) { e.preventDefault(); document.getElementById(`zone-${which}`).classList.add('drag-over'); }
+function handleDragLeave(e, which) { document.getElementById(`zone-${which}`).classList.remove('drag-over'); }
+function handleDrop(e, which) {
+  e.preventDefault();
+  document.getElementById(`zone-${which}`).classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(which, file);
+}
+
+function updateBtn() {
+  document.getElementById('analyze-btn').disabled = !(papers.a?.text && papers.b?.text);
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-box');
+  el.textContent = msg;
+  el.style.display = msg ? 'block' : 'none';
+}
+
+function renderTags(id, items, cls) {
+  const el = document.getElementById(id);
+  el.innerHTML = '';
+  (items || []).forEach(t => {
+    const span = document.createElement('span');
+    span.className = `tag tag-${cls}`;
+    span.textContent = t;
+    el.appendChild(span);
+  });
+}
+
+function renderContributions(items) {
+  const el = document.getElementById('contributions');
+  el.innerHTML = '';
+  (items || []).forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'contrib-item';
+    div.innerHTML = `<div class="contrib-item-label">${item.label}</div><div class="contrib-item-text">${item.text}</div>`;
+    el.appendChild(div);
+  });
+}
+
+function renderPathways(items) {
+  const el = document.getElementById('pathways');
+  el.innerHTML = '';
+  (items || []).forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'pathway-item';
+    div.innerHTML = `<div class="pathway-label">${item.label}</div><div class="pathway-text">${item.text}</div>`;
+    el.appendChild(div);
+  });
+}
+
+function getScoreColor(s) {
+  if (s >= 70) return '#0D6B4E';
+  if (s >= 50) return '#1A4D8F';
+  if (s >= 35) return '#7A4D00';
+  return '#B8410F';
+}
+
+function getVerdict(s) {
+  if (s >= 80) return 'Strong synergy — highly compatible research areas';
+  if (s >= 65) return 'Complementary — excellent collaboration potential';
+  if (s >= 50) return 'Partial overlap — focused collaboration possible';
+  if (s >= 35) return 'Niche bridge — specific methods can still contribute';
+  return 'Divergent — limited but targeted collaboration possible';
+}
+
+function setSteps(active) {
+  for (let i = 1; i <= 3; i++) {
+    const el = document.getElementById(`step${i}`);
+    el.className = 'step-circle' + (i < active ? ' done' : i === active ? ' active' : '');
+    el.textContent = i < active ? '✓' : i;
+  }
+}
+
+async function runAnalysis() {
+  showError('');
+  if (!papers.a?.text || !papers.b?.text) { showError('Please wait for both PDFs to load.'); return; }
+
+  const btn = document.getElementById('analyze-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner-btn"></div><span>Analyzing…</span>';
+  document.getElementById('results').classList.remove('visible');
+  setSteps(2);
+
+  const prompt = `You are a research collaboration analyst. Analyze Paper A (the user's paper) and Paper B (the target paper they want to collaborate with).
+
+Your goal: identify how the author of Paper A can specifically contribute to Paper B using their methodologies, and where Paper B's limitations and future directions align with Paper A's skills.
+
+Respond ONLY with valid JSON (no markdown, no backticks, no extra text) in exactly this structure:
+{
+  "score": <integer 0-100>,
+  "summary": "<2-3 sentence plain-English summary of compatibility and collaboration potential>",
+  "paperA": {
+    "limitations": ["<concise limitation, 4-8 words>"],
+    "methodologies": ["<method name, 3-6 words>"],
+    "futureDirections": ["<direction, 4-8 words>"]
+  },
+  "paperB": {
+    "limitations": ["<concise limitation, 4-8 words>"],
+    "methodologies": ["<method name, 3-6 words>"],
+    "futureDirections": ["<direction, 4-8 words>"]
+  },
+  "contributions": [
+    { "label": "<skill/method from Paper A>", "text": "<how this addresses a specific Paper B gap>" }
+  ],
+  "pathways": [
+    { "label": "<pathway label>", "text": "<concrete joint research direction>" }
+  ]
+}
+Rules: 4-6 items per list, 4-6 contributions, 4 pathways. Keep tags 3-8 words. Be specific and actionable.`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 2000,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'text', text: `PAPER A (my paper):\n\n${papers.a.text}` },
+            { type: 'text', text: `PAPER B (target paper):\n\n${papers.b.text}` },
+            { type: 'text', text: prompt }
+          ]
+        }]
+      })
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.error?.message || `HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    const raw = (data.content || []).map(c => c.text || '').join('');
+    const clean = raw.replace(/```json|```/g, '').trim();
+
+    let json;
+    try { json = JSON.parse(clean); }
+    catch(e) {
+      const match = clean.match(/\{[\s\S]*\}/);
+      if (match) json = JSON.parse(match[0]);
+      else throw new Error('Could not parse response — please try again.');
+    }
+
+    const score = Math.max(0, Math.min(100, json.score || 0));
+    const color = getScoreColor(score);
+    document.getElementById('score-num').textContent = score;
+    document.getElementById('score-verdict').textContent = getVerdict(score);
+    document.getElementById('score-summary').textContent = json.summary || '';
+    document.getElementById('score-dial').style.cssText += `;border-color:${color};background:${color}18`;
+    document.getElementById('score-num').style.color = color;
+    document.querySelector('.score-pct-label').style.color = color;
+    const bar = document.getElementById('score-bar');
+    bar.style.background = color;
+    setTimeout(() => { bar.style.width = score + '%'; }, 100);
+
+    renderTags('lim-a',  json.paperA?.limitations,      'purple');
+    renderTags('lim-b',  json.paperB?.limitations,      'green');
+    renderTags('meth-a', json.paperA?.methodologies,    'blue');
+    renderTags('meth-b', json.paperB?.methodologies,    'green');
+    renderTags('fut-a',  json.paperA?.futureDirections, 'coral');
+    renderTags('fut-b',  json.paperB?.futureDirections, 'amber');
+    renderContributions(json.contributions);
+    renderPathways(json.pathways);
+
+    document.getElementById('results').classList.add('visible');
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setSteps(3);
+
+  } catch(err) {
+    showError('Analysis failed: ' + err.message);
+    setSteps(1);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<span>Analyze again</span><span style="font-size:16px">→</span>';
+    updateBtn();
+  }
+}
+</script>
+</body>
+</html>
